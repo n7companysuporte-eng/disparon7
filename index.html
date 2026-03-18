@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N7 Company CRM</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #2b0a5a, #1a0033);
+  color: white;
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 40px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* LOGO */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* CONTAINER */
+.container {
+  max-width: 1100px;
+  margin: 30px auto;
+  padding: 20px;
+}
+
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* CARD */
+.card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(15px);
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* INPUT */
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(0,0,0,0.4);
+  color: white;
+  outline: none;
+}
+
+/* BUTTON */
+button {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+/* LISTA */
+.lead {
+  margin-top: 10px;
+  padding: 15px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+}
+
+/* STATUS */
+.status {
+  margin-top: 8px;
+  padding: 6px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.frio { background: #6b7280; }
+.interessado { background: #f59e0b; }
+.muito { background: #22c55e; }
+.nao { background: #ef4444; }
+
+.small {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 5px;
+}
+
+/* RESPONSIVO */
+@media(max-width: 800px){
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">N7</div>
+    <div class="logo-text">N7 Company CRM</div>
+  </div>
+  <div>Gestão de Leads</div>
+</div>
+
+<div class="container">
+
+<div class="grid">
+
+<!-- NOVO LEAD -->
+<div class="card">
+<h2>➕ Novo Lead</h2>
+
+<input id="nome" placeholder="Nome">
+<input id="numero" placeholder="Número (5599...)">
+
+<button onclick="addLead()">Adicionar Lead</button>
+
+<button onclick="limparTudo()" style="background:linear-gradient(135deg,#ef4444,#dc2626)">
+Resetar Tudo
+</button>
+
+</div>
+
+<!-- DISPARO -->
+<div class="card">
+<h2>💬 Disparo</h2>
+
+<textarea id="msg" placeholder="Mensagem... use {nome}" style="height:120px;"></textarea>
+
+<button onclick="enviar()">Enviar Mensagem</button>
+<button onclick="selecionarTodos()">Selecionar todos</button>
+<button onclick="limparSelecionados()">Limpar seleção</button>
+
+</div>
+
+</div>
+
+<!-- LISTA -->
+<div class="card">
+<h2>📋 Leads</h2>
+<div id="lista"></div>
+</div>
+
+</div>
+
+<script>
+
+let leads = JSON.parse(localStorage.getItem("leads")) || []
+
+function salvar() {
+  localStorage.setItem("leads", JSON.stringify(leads))
+}
+
+function addLead() {
+  const nome = document.getElementById("nome").value
+  const numero = document.getElementById("numero").value
+
+  if (!nome || !numero) return alert("Preencha tudo")
+
+  leads.push({
+    id: Date.now(),
+    nome,
+    numero,
+    status: "Frio",
+    selecionado: false,
+    ultimaMsg: null
+  })
+
+  salvar()
+  render()
+}
+
+function toggleStatus(id) {
+  const ordem = ["Frio", "Interessado", "Muito interessado", "Não interessado"]
+
+  leads = leads.map(l => {
+    if (l.id === id) {
+      const next = ordem[(ordem.indexOf(l.status) + 1) % ordem.length]
+      return { ...l, status: next }
+    }
+    return l
+  })
+
+  salvar()
+  render()
+}
+
+function toggleSelect(id) {
+  leads = leads.map(l => l.id === id ? { ...l, selecionado: !l.selecionado } : l)
+  salvar()
+  render()
+}
+
+function selecionarTodos() {
+  leads = leads.map(l => ({ ...l, selecionado: true }))
+  salvar()
+  render()
+}
+
+function limparSelecionados() {
+  leads = leads.map(l => ({ ...l, selecionado: false }))
+  salvar()
+  render()
+}
+
+function limparTudo() {
+  if (!confirm("Apagar tudo?")) return
+  localStorage.removeItem("leads")
+  leads = []
+  render()
+}
+
+function enviar() {
+  const msg = document.getElementById("msg").value
+  const agora = new Date().toLocaleString()
+
+  leads = leads.map(l => {
+    if (l.selecionado) {
+      const texto = msg.replace("{nome}", l.nome)
+      const url = `https://wa.me/${l.numero}?text=${encodeURIComponent(texto)}`
+      window.open(url, "_blank")
+
+      return { ...l, ultimaMsg: agora }
+    }
+    return l
+  })
+
+  salvar()
+  render()
+}
+
+function render() {
+  const lista = document.getElementById("lista")
+  lista.innerHTML = ""
+
+  leads.forEach(l => {
+
+    let classe = "frio"
+    if (l.status === "Interessado") classe = "interessado"
+    if (l.status === "Muito interessado") classe = "muito"
+    if (l.status === "Não interessado") classe = "nao"
+
+    lista.innerHTML += `
+      <div class="lead">
+        <input type="checkbox" ${l.selecionado ? "checked" : ""} onclick="toggleSelect(${l.id})">
+        <b>${l.nome}</b> - ${l.numero}
+
+        <div class="status ${classe}" onclick="toggleStatus(${l.id})">
+          ${l.status}
+        </div>
+
+        <div class="small">
+          Última mensagem: ${l.ultimaMsg || "Nunca enviada"}
+        </div>
+      </div>
+    `
+  })
+}
+
+render()
+
+</script>
+
+</body>
+</html>
